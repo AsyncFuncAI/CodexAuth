@@ -12,13 +12,7 @@ export function PopupFallback({ auth }: { auth: UseCodexAuthResult }) {
     <div style={styles.status}>
       Your browser blocked the popup.{" "}
       {auth.loginUrl ? (
-        <a
-          href={auth.loginUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          style={styles.link}
-          onClick={auth.openLoginPage}
-        >
+        <a href={auth.loginUrl} target="_blank" rel="noopener noreferrer" style={styles.link}>
           Open the login page
         </a>
       ) : (

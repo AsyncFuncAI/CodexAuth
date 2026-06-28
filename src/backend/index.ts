@@ -9,11 +9,10 @@ export { createCodexRouter } from "./express/createCodexRouter.js";
 export type { CodexRouterOptions } from "./express/createCodexRouter.js";
 export { handleCodexRequest } from "./core/handler.js";
 export type { CodexHandlerOptions, CookieAttributes } from "./core/handler.js";
-export { defaultCliRunner } from "./express/cliRunner.js";
+export { defaultCliRunner, killLoginProc } from "./express/cliRunner.js";
 export type { CliRunnerOptions } from "./express/cliRunner.js";
-export { createMemorySessionStore } from "./express/sessionStore.js";
-export type { SessionStore } from "./express/sessionStore.js";
-export { enforceSameOrigin, corsForAllowedOrigins } from "./express/security.js";
+export { createMemorySessionStore } from "./core/sessionStore.js";
+export type { SessionStore } from "./core/sessionStore.js";
 export type {
   CodexRunner,
   SessionCtx,

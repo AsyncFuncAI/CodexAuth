@@ -1,5 +1,10 @@
 import express from "express";
-import { createCodexRouter, defaultCliRunner } from "../../src/backend/index.js";
+import {
+  createCodexRouter,
+  createMemorySessionStore,
+  defaultCliRunner,
+  killLoginProc,
+} from "../../src/backend/index.js";
 
 const PORT = Number(process.env.DEMO_SERVER_PORT ?? 8787);
 const COOKIE_SECRET = process.env.COOKIE_SECRET ?? "dev-only-insecure-secret-change-me-please";
@@ -13,6 +18,8 @@ app.use(
       codexBin: process.env.CODEX_BIN ?? "codex",
       model: process.env.CODEX_MODEL ?? "gpt-5.5",
     }),
+    // Kill any lingering device-login process when a session is reaped/logged out.
+    sessionStore: createMemorySessionStore({ onEvict: killLoginProc }),
     cookieSecret: COOKIE_SECRET,
     // The Vite dev server proxies same-origin over http, so Secure cookies would
     // not round-trip in local dev. Production should keep the default (Secure on).

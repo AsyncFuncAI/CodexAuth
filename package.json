@@ -69,11 +69,18 @@
     "demo:app": "vite --config demo/vite.config.ts",
     "demo": "tsx demo/server/index.ts & vite --config demo/vite.config.ts"
   },
+  "dependencies": {
+    "cookie-signature": "^1.2.2"
+  },
   "peerDependencies": {
+    "express": ">=4",
     "react": ">=17",
     "react-dom": ">=17"
   },
   "peerDependenciesMeta": {
+    "express": {
+      "optional": true
+    },
     "react": {
       "optional": true
     },

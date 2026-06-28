@@ -123,8 +123,12 @@ export function transition(
       };
 
     case "LOGGED_OUT":
-    case "CANCEL":
       return { ...initialSnapshot, status: "loggedOut" };
+
+    case "CANCEL":
+      // Cancelling a login the user never completed returns to 'idle'
+      // (never-authenticated), NOT 'loggedOut' — so onLogout does not fire.
+      return { ...initialSnapshot, status: "idle" };
 
     case "ERROR":
       return { ...state, status: "error", error: event.error };

@@ -6,7 +6,12 @@
 //                ALLOWED_ORIGINS (comma-separated, for cross-origin frontends)
 
 import express from "express";
-import { createCodexRouter, defaultCliRunner } from "codex-auth/backend";
+import {
+  createCodexRouter,
+  createMemorySessionStore,
+  defaultCliRunner,
+  killLoginProc,
+} from "codex-auth/backend";
 
 const PORT = Number(process.env.PORT ?? 8787);
 const COOKIE_SECRET = process.env.COOKIE_SECRET;
@@ -30,6 +35,7 @@ app.use(
   "/api/codex",
   createCodexRouter({
     runner: defaultCliRunner({ model: MODEL }),
+    sessionStore: createMemorySessionStore({ onEvict: killLoginProc }),
     cookieSecret: COOKIE_SECRET,
     ...(ALLOWED_ORIGINS.length ? { allowedOrigins: ALLOWED_ORIGINS } : {}),
   }),

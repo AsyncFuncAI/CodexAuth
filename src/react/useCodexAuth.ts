@@ -124,6 +124,9 @@ export function useCodexAuth(options: UseCodexAuthOptions = {}): UseCodexAuthRes
     // browser's popup blocker permits it. The login URL isn't known yet.
     const popup = openBlankPopup();
     writeHoldingScreen(popup);
+    // Move into 'connecting' FIRST (LOGIN_CLICK resets popupBlocked), THEN attach
+    // the popup — so a null popup's POPUP_BLOCKED isn't immediately cleared.
+    client.beginLogin();
     client.attachPopup(popup);
     // If popup is null the browser blocked it; startLogin still resolves the
     // loginUrl and the default UI renders the PopupFallback affordance.

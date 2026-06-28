@@ -30,6 +30,11 @@ export function createCodexProxy() {
       if (!url.pathname.startsWith(base)) {
         return new Response("not found", { status: 404 });
       }
+      // The session cookie is Secure; the upstream MUST be https or the cookie
+      // never round-trips. Fail loudly rather than silently breaking auth.
+      if (!env.CODEX_BACKEND_ORIGIN?.startsWith("https://")) {
+        return new Response("CODEX_BACKEND_ORIGIN must be an https:// URL", { status: 500 });
+      }
       const target = new URL(env.CODEX_BACKEND_ORIGIN);
       target.pathname = url.pathname;
       target.search = url.search;

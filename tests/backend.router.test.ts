@@ -3,7 +3,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import express from "express";
 import request from "supertest";
 import { createCodexRouter } from "../src/backend/express/createCodexRouter.js";
-import { createMemorySessionStore } from "../src/backend/express/sessionStore.js";
+import { createMemorySessionStore } from "../src/backend/core/sessionStore.js";
 import type { CodexRunner, SessionCtx } from "../src/backend/types.js";
 import type { RunStreamEvent } from "../src/core/contract.js";
 

@@ -61,9 +61,9 @@ describe("auth state machine", () => {
     expect(s.error?.code).toBe("EXPIRED");
   });
 
-  it("CANCEL and LOGGED_OUT both go to loggedOut", () => {
-    expect(transition(initialSnapshot, { type: "CANCEL" }).status).toBe("loggedOut");
+  it("LOGGED_OUT goes to loggedOut; CANCEL returns to idle (never-authenticated)", () => {
     expect(transition(initialSnapshot, { type: "LOGGED_OUT" }).status).toBe("loggedOut");
+    expect(transition(initialSnapshot, { type: "CANCEL" }).status).toBe("idle");
   });
 
   it("RESUME_START → resuming, RESUME_STALE → idle", () => {

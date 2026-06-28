@@ -15,5 +15,15 @@ export default defineConfig({
   treeshake: true,
   // The browser entries (index, run) must never pull Node built-ins or express.
   // The backend entry is the only one allowed to; mark heavy node deps external.
-  external: ["react", "react-dom", "express", "node:child_process", "node:crypto"],
+  external: [
+    "react",
+    "react-dom",
+    "express",
+    "cookie-signature",
+    "node:child_process",
+    "node:crypto",
+    "node:fs/promises",
+    "node:os",
+    "node:path",
+  ],
 });

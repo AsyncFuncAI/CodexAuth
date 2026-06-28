@@ -8,20 +8,19 @@
 
 const DEFAULT_ALLOWED_HOSTS = ["auth.openai.com"];
 
-const POPUP_FEATURES = "popup,width=520,height=720";
+const POPUP_WIDTH = 520;
+const POPUP_HEIGHT = 720;
 
 /** Open a blank popup synchronously. Returns null if the browser blocked it. */
 export function openBlankPopup(): Window | null {
   if (typeof window === "undefined") return null;
   try {
-    const w = 520;
-    const h = 720;
-    const left = window.screenX + Math.max(0, (window.outerWidth - w) / 2);
-    const top = window.screenY + Math.max(0, (window.outerHeight - h) / 2);
+    const left = window.screenX + Math.max(0, (window.outerWidth - POPUP_WIDTH) / 2);
+    const top = window.screenY + Math.max(0, (window.outerHeight - POPUP_HEIGHT) / 2);
     return window.open(
       "about:blank",
       "codex-login",
-      `${POPUP_FEATURES},left=${Math.round(left)},top=${Math.round(top)}`,
+      `popup,width=${POPUP_WIDTH},height=${POPUP_HEIGHT},left=${Math.round(left)},top=${Math.round(top)}`,
     );
   } catch {
     return null;

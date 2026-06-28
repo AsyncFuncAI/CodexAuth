@@ -32,6 +32,8 @@ export interface CodexClient {
   run: (prompt: string, handlers?: RunHandlers) => RunController;
   /** Register the popup ref so the client can point/close it. Null = blocked. */
   attachPopup: (popup: Window | null) => void;
+  /** Move into the 'connecting' state (call synchronously when login starts). */
+  beginLogin: () => void;
   destroy: () => void;
   isDestroyed: () => boolean;
   readonly endpoints: EndpointMap;
@@ -266,6 +268,7 @@ export function createCodexClient(config: CodexClientConfig = {}): CodexClient {
       popup = p;
       if (!p) dispatch({ type: "POPUP_BLOCKED" });
     },
+    beginLogin: () => dispatch({ type: "LOGIN_CLICK" }),
     destroy,
     isDestroyed: () => destroyed,
     endpoints,

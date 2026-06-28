@@ -2,6 +2,7 @@
 export { CodexAuth } from "./react/CodexAuth.js";
 export type { CodexAuthProps } from "./react/CodexAuth.js";
 export { useCodexAuth } from "./react/useCodexAuth.js";
+export { OpenAIIcon } from "./react/ui/OpenAIIcon.js";
 export type {
   UseCodexAuthOptions,
   UseCodexAuthResult,

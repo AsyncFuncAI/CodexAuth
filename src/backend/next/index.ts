@@ -30,7 +30,7 @@ export function createNextCodexHandler(
 
 export { defaultCliRunner } from "../express/cliRunner.js";
 export type { CliRunnerOptions } from "../express/cliRunner.js";
-export { createMemorySessionStore } from "../express/sessionStore.js";
+export { createMemorySessionStore } from "../core/sessionStore.js";
 export type {
   CodexRunner,
   SessionCtx,

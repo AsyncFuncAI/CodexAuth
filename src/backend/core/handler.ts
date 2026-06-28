@@ -8,7 +8,7 @@
  */
 import { sign, unsign } from "cookie-signature";
 import type { CodexRunner, SessionCtx } from "../types.js";
-import { createMemorySessionStore, type SessionStore } from "../express/sessionStore.js";
+import { createMemorySessionStore, type SessionStore } from "./sessionStore.js";
 
 export interface CodexHandlerOptions {
   runner: CodexRunner;
@@ -206,9 +206,25 @@ export async function handleCodexRequest(
     if (!ctx) return json({ ok: false, status: "logged_out" }, { status: 401 }, cors);
     try {
       const result = await opts.runner.getStatus(ctx);
-      return result.ok
-        ? json({ ok: true, account: result.account }, {}, cors)
-        : json({ ok: false, status: result.status ?? "pending" }, {}, cors);
+      if (!result.ok) {
+        return json({ ok: false, status: result.status ?? "pending" }, {}, cors);
+      }
+      // Mark the session authenticated and rotate the id on the FIRST transition
+      // from unauthenticated to authenticated (session-fixation defense — an
+      // attacker who planted a known cookie cannot ride the victim's login).
+      const extra: Record<string, string> = { ...cors };
+      if (!ctx.data.authenticated) {
+        ctx.data.authenticated = true;
+        const rotated = r.store.rotate(ctx.id);
+        if (rotated) {
+          extra["set-cookie"] = cookieHeader(
+            r.cookieName,
+            sign(rotated.id, opts.cookieSecret),
+            r.cookieAttrs,
+          );
+        }
+      }
+      return json({ ok: true, account: result.account }, {}, extra);
     } catch {
       return json({ ok: false, status: "error" }, { status: 503 }, cors);
     }
@@ -218,6 +234,21 @@ export async function handleCodexRequest(
   if (post && path === "/run/stream") {
     const ctx = getSession(req, r, opts.cookieSecret);
     if (!ctx) return json({ error: "no session" }, { status: 401 }, cors);
+    // Require an AUTHENTICATED session — a bare cookie holder must not be able to
+    // burn the logged-in account's quota.
+    if (!ctx.data.authenticated) {
+      try {
+        const status = await opts.runner.getStatus(ctx);
+        if (!status.ok) return json({ error: "not authenticated" }, { status: 401 }, cors);
+        ctx.data.authenticated = true;
+      } catch {
+        return json({ error: "not authenticated" }, { status: 401 }, cors);
+      }
+    }
+    // One in-flight run per session (basic quota-abuse guard).
+    if (ctx.data.runInFlight) {
+      return json({ error: "a run is already in progress" }, { status: 429 }, cors);
+    }
     let prompt = "";
     try {
       prompt = ((await req.json()) as { prompt?: string }).prompt ?? "";
@@ -226,6 +257,7 @@ export async function handleCodexRequest(
     }
     if (!prompt.trim()) return json({ error: "prompt is required" }, { status: 400 }, cors);
 
+    ctx.data.runInFlight = true;
     const ac = new AbortController();
     req.signal?.addEventListener("abort", () => ac.abort(), { once: true });
 
@@ -239,10 +271,12 @@ export async function handleCodexRequest(
         } catch {
           controller.enqueue(enc.encode(JSON.stringify({ type: "error", error: "run failed" }) + "\n"));
         } finally {
+          ctx.data.runInFlight = false;
           controller.close();
         }
       },
       cancel() {
+        ctx.data.runInFlight = false;
         ac.abort();
       },
     });
@@ -262,10 +296,12 @@ export async function handleCodexRequest(
       }
       r.store.delete(ctx.id);
     }
+    // Clear the cookie using the SAME attributes it was set with (so it actually
+    // clears in dev where Secure is off, and honors a custom Path/SameSite).
     return json(
       {},
       {},
-      { ...cors, "set-cookie": `${r.cookieName}=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Strict` },
+      { ...cors, "set-cookie": cookieHeader(r.cookieName, "", { ...r.cookieAttrs, maxAge: 0 }) },
     );
   }
 
