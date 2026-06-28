@@ -16,8 +16,10 @@
       "custom_domain": true
     }
   ],
-  "vars": {
-    // The box VM's public HTTPS origin (clean IP that can reach chatgpt.com).
-    "CODEX_BACKEND_ORIGIN": "https://REDACTED.on.ascii.dev"
-  }
+  // CODEX_BACKEND_ORIGIN (the box VM's public HTTPS origin) is intentionally NOT
+  // committed. Set it per-deployment so the live backend URL stays out of the
+  // public repo:
+  //   npx wrangler deploy --config wrangler.jsonc --var CODEX_BACKEND_ORIGIN:"https://<your-box>.on.ascii.dev"
+  // or add it as a Worker var/secret in the Cloudflare dashboard.
+  "vars": {}
 }
