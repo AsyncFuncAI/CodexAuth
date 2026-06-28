@@ -55,8 +55,9 @@ export function useCodexAuth(options: UseCodexAuthOptions = {}): UseCodexAuthRes
 
   // Stabilize the client: created once. We intentionally read config once — a
   // changing inline config literal must NOT orphan the popup/subscriptions.
+  // If a prior StrictMode pass destroyed our owned client, recreate it.
   const clientRef = useRef<CodexClient | null>(null);
-  if (!clientRef.current) {
+  if (!clientRef.current || (!externalClient && clientRef.current.isDestroyed())) {
     clientRef.current = externalClient ?? createCodexClient(options);
   }
   const client = clientRef.current;
@@ -64,6 +65,8 @@ export function useCodexAuth(options: UseCodexAuthOptions = {}): UseCodexAuthRes
   // Latest callbacks without re-subscribing.
   const cbRef = useRef(options);
   cbRef.current = options;
+
+  const pendingDestroy = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const snapshot = useSyncExternalStore(
     useCallback((cb) => client.subscribe(cb), [client]),
@@ -87,14 +90,27 @@ export function useCodexAuth(options: UseCodexAuthOptions = {}): UseCodexAuthRes
   }, [snapshot.status, snapshot.account, snapshot.error]);
 
   // Resume a persisted session on mount; tear down on unmount.
+  // Destroy is DEFERRED so React 18 StrictMode's mount→unmount→mount cycle (which
+  // would otherwise permanently destroy our ref-persisted client) cancels it on
+  // the immediate remount.
   useEffect(() => {
     void client.resumeFromStorage();
     return () => {
-      // Only destroy a client we own.
-      if (!externalClient) client.destroy();
+      if (externalClient) return; // never destroy a client we don't own
+      const t = setTimeout(() => client.destroy(), 0);
+      // store the pending-destroy timer so a quick remount can cancel it
+      pendingDestroy.current = t;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [client]);
+
+  // Cancel a deferred destroy if we remounted right away (StrictMode).
+  useEffect(() => {
+    if (pendingDestroy.current) {
+      clearTimeout(pendingDestroy.current);
+      pendingDestroy.current = null;
+    }
+  });
 
   const loginInFlight = useRef(false);
 

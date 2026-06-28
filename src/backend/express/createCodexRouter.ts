@@ -157,8 +157,14 @@ export function createCodexRouter(opts: CodexRouterOptions): Router {
     res.setHeader("Cache-Control", "no-cache");
 
     const ac = new AbortController();
-    // Kill the run if the client disconnects — no orphaned codex exec spend.
-    req.on("close", () => ac.abort());
+    // Kill the run only if the CLIENT disconnects — listen on the RESPONSE, not
+    // the request. For a POST, req 'close' fires as soon as the request body is
+    // consumed (almost immediately), which would abort the run before it starts.
+    // res 'close' fires when the actual connection ends.
+    let finished = false;
+    res.on("close", () => {
+      if (!finished) ac.abort();
+    });
 
     try {
       for await (const event of opts.runner.run(ctx, prompt, ac.signal)) {
@@ -168,6 +174,7 @@ export function createCodexRouter(opts: CodexRouterOptions): Router {
       res.write(JSON.stringify({ type: "error", error: "run failed" }) + "\n");
       void e;
     } finally {
+      finished = true;
       res.end();
     }
   });

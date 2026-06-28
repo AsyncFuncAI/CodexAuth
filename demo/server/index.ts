@@ -9,7 +9,10 @@ const app = express();
 app.use(
   "/api/codex",
   createCodexRouter({
-    runner: defaultCliRunner({ codexBin: process.env.CODEX_BIN ?? "codex" }),
+    runner: defaultCliRunner({
+      codexBin: process.env.CODEX_BIN ?? "codex",
+      model: process.env.CODEX_MODEL ?? "gpt-5.5",
+    }),
     cookieSecret: COOKIE_SECRET,
     // The Vite dev server proxies same-origin over http, so Secure cookies would
     // not round-trip in local dev. Production should keep the default (Secure on).

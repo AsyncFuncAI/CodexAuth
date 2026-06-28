@@ -1,4 +1,7 @@
 import { spawn } from "node:child_process";
+import { readFile } from "node:fs/promises";
+import { homedir } from "node:os";
+import { join } from "node:path";
 import type { RunStreamEvent } from "../../core/contract.js";
 import type {
   CodexRunner,
@@ -13,6 +16,8 @@ export interface CliRunnerOptions {
   cwd?: string;
   /** Extra env for the spawned process (e.g. a per-session CODEX_HOME). */
   env?: NodeJS.ProcessEnv;
+  /** Model passed to `codex exec -m <model>`. Omit to use the CLI default. */
+  model?: string;
 }
 
 /**
@@ -78,8 +83,14 @@ export function defaultCliRunner(opts: CliRunnerOptions = {}): CodexRunner {
       void ctx;
       const { stdout, stderr } = exec(["login", "status"]);
       const out = (await stdout) + (await stderr);
-      if (/logged in/i.test(out)) {
-        const account = extractAccount(out) ?? "ChatGPT account";
+      // NB: "Not logged in" contains "logged in" — must exclude the negative case.
+      const loggedIn = /logged in/i.test(out) && !/not logged in/i.test(out);
+      if (loggedIn) {
+        // `codex login status` does not print the email, but ~/.codex/auth.json
+        // holds an id_token whose claims include email + name. We decode those
+        // identity claims SERVER-SIDE and return only the email/name — never a token.
+        const account =
+          (await accountFromAuthJson(baseEnv)) ?? extractAccount(out) ?? "ChatGPT account";
         return { ok: true, account };
       }
       return { ok: false, status: "pending" };
@@ -87,16 +98,38 @@ export function defaultCliRunner(opts: CliRunnerOptions = {}): CodexRunner {
 
     async *run(ctx: SessionCtx, prompt: string, signal?: AbortSignal): AsyncIterable<RunStreamEvent> {
       void ctx;
-      const proc = spawn(bin, ["exec", "--json", "-"], {
-        cwd: opts.cwd,
-        env: baseEnv,
-        signal,
-      });
+      const args = ["exec", "--json"];
+      if (opts.model) args.push("-m", opts.model);
+      args.push("-");
+      const proc = spawn(bin, args, { cwd: opts.cwd, env: baseEnv });
+
+      // ALWAYS attach an error handler. When the client disconnects we kill the
+      // child ourselves; the resulting ChildProcess 'error' (ABORT_ERR) must be
+      // swallowed or Node throws an uncaught exception and crashes the server.
+      proc.on("error", () => {});
+
       // Kill the child if the client disconnects (signal aborts) — no orphan spend.
+      const onAbort = () => {
+        try {
+          proc.kill("SIGTERM");
+        } catch {
+          /* already gone */
+        }
+      };
+      if (signal) {
+        if (signal.aborted) onAbort();
+        else signal.addEventListener("abort", onAbort, { once: true });
+      }
+
+      proc.stdin?.on("error", () => {}); // EPIPE if the child exits early
       proc.stdin?.write(prompt);
       proc.stdin?.end();
 
-      yield* parseExecJsonl(proc);
+      try {
+        yield* parseExecJsonl(proc);
+      } finally {
+        if (signal) signal.removeEventListener("abort", onAbort);
+      }
     },
 
     async logout(ctx: SessionCtx): Promise<void> {
@@ -127,16 +160,18 @@ function readDeviceLoginInfo(
   return new Promise((resolve, reject) => {
     let buf = "";
     const onData = (d: Buffer) => {
-      buf += d.toString();
+      buf += stripAnsi(d.toString());
+      // Verified format (codex-cli 0.141.0):
+      //   https://auth.openai.com/codex/device
+      //   one-time code: BPZ8-ZO6GV   (4 chars, dash, 4-6 chars)
       const url = buf.match(/https:\/\/auth\.openai\.com\/\S+/)?.[0];
-      // user codes look like XXXX-XXXX
-      const code = buf.match(/\b[A-Z0-9]{4}-[A-Z0-9]{4}\b/)?.[0];
+      const code = buf.match(/\b[A-Z0-9]{4}-[A-Z0-9]{4,6}\b/)?.[0];
       if (url && code) {
         cleanup();
         resolve({
           loginUrl: stripTrailingPunctuation(url),
           userCode: code,
-          // The CLI does not always print an expiry; device codes are ~15min.
+          // The CLI prints "(expires in 15 minutes)"; device codes are ~15min.
           expiresAt: Date.now() + 15 * 60 * 1000,
         });
       }
@@ -156,60 +191,81 @@ function readDeviceLoginInfo(
   });
 }
 
-/** Translate `codex exec --json` JSONL into our RunStreamEvent shape. */
+/**
+ * Translate `codex exec --json` JSONL into our RunStreamEvent shape.
+ *
+ * Consumes the child's stdout as an async iterable (Node streams are async
+ * iterable since v10), splitting on newlines. This avoids the lost-wakeup races
+ * of a hand-rolled queue. We also drain stderr so a CLI error surfaces instead
+ * of hanging silently.
+ */
 async function* parseExecJsonl(
   proc: ReturnType<typeof spawn>,
 ): AsyncIterable<RunStreamEvent> {
   const stdout = proc.stdout;
-  if (!stdout) return;
+  if (!stdout) {
+    yield { type: "error", error: "codex produced no output stream" };
+    return;
+  }
+
+  // Collect stderr for diagnostics if the run produces nothing useful.
+  let stderrText = "";
+  proc.stderr?.on("data", (d: Buffer) => (stderrText += d.toString()));
+
   let buffer = "";
-  const queue: RunStreamEvent[] = [];
-  let resolveNext: (() => void) | null = null;
-  let ended = false;
+  let sawAny = false;
 
-  const push = (e: RunStreamEvent) => {
-    queue.push(e);
-    resolveNext?.();
-  };
+  try {
+    for await (const chunk of stdout as AsyncIterable<Buffer>) {
+      buffer += chunk.toString();
+      let nl: number;
+      while ((nl = buffer.indexOf("\n")) !== -1) {
+        const line = buffer.slice(0, nl).trim();
+        buffer = buffer.slice(nl + 1);
+        if (!line) continue;
+        const event = mapCodexEvent(line);
+        if (event) {
+          sawAny = true;
+          yield event;
+        }
+      }
+    }
+    // flush a final partial line
+    const tail = buffer.trim();
+    if (tail) {
+      const event = mapCodexEvent(tail);
+      if (event) {
+        sawAny = true;
+        yield event;
+      }
+    }
+  } catch (e) {
+    yield { type: "error", error: sanitize(e instanceof Error ? e.message : "stream read error") };
+    return;
+  }
 
-  stdout.on("data", (d: Buffer) => {
-    buffer += d.toString();
-    let nl: number;
-    while ((nl = buffer.indexOf("\n")) !== -1) {
-      const line = buffer.slice(0, nl).trim();
-      buffer = buffer.slice(nl + 1);
-      if (!line) continue;
-      const event = mapCodexEvent(line);
-      if (event) push(event);
-    }
-  });
-  const finish = () => {
-    if (buffer.trim()) {
-      const event = mapCodexEvent(buffer.trim());
-      if (event) push(event);
-    }
-    ended = true;
-    resolveNext?.();
-  };
-  stdout.on("end", finish);
-  stdout.on("error", finish);
-  proc.on("close", finish);
-
-  for (;;) {
-    if (queue.length) {
-      yield queue.shift()!;
-      continue;
-    }
-    if (ended) return;
-    await new Promise<void>((r) => (resolveNext = r));
-    resolveNext = null;
+  if (!sawAny) {
+    // The CLI exited without an agent message — surface why (sanitized).
+    const msg = sanitize(stderrText.trim()) || "codex exec produced no assistant message";
+    yield { type: "error", error: msg };
   }
 }
 
 /**
- * Map a single `codex exec --json` JSONL line to a RunStreamEvent. The CLI's
- * event vocabulary varies by version; we extract assistant text and a final
- * result defensively, ignoring unrecognized events.
+ * Map a single `codex exec --json` JSONL line to a RunStreamEvent.
+ *
+ * Verified event vocabulary (codex-cli 0.141.0):
+ *   {"type":"thread.started", ...}
+ *   {"type":"turn.started"}
+ *   {"type":"item.started",   "item":{ "type":"command_execution"|... }}
+ *   {"type":"item.completed", "item":{ "type":"agent_message", "text":"..." }}
+ *   {"type":"item.completed", "item":{ "type":"error", "message":"..." }}   ← noise, not fatal
+ *   {"type":"turn.completed", "usage":{...}}
+ *
+ * The assistant's answer is the `agent_message` item's text. We send it as a
+ * `replace` so the UI shows the final message cleanly. We ignore tool/command
+ * items and non-fatal `error` items (e.g. the skills-budget warning), and emit
+ * a `done` on `turn.completed`.
  */
 function mapCodexEvent(line: string): RunStreamEvent | null {
   let obj: any;
@@ -218,27 +274,28 @@ function mapCodexEvent(line: string): RunStreamEvent | null {
   } catch {
     return null;
   }
-  const type: string = obj.type ?? obj.msg?.type ?? "";
+  const type: string = obj.type ?? "";
 
-  // Streaming assistant deltas
-  if (/agent_message_delta|assistant.*delta|output_text\.delta/i.test(type)) {
-    const text = obj.delta ?? obj.text ?? obj.msg?.delta ?? "";
-    if (text) return { type: "assistant-text", mode: "append", text: String(text) };
+  if (type === "item.completed" || type === "item.updated") {
+    const item = obj.item ?? {};
+    if (item.type === "agent_message" && item.text) {
+      // The final assistant message — replace so partial/tool noise is overwritten.
+      return { type: "assistant-text", mode: "replace", text: String(item.text) };
+    }
+    // command_execution / reasoning / non-fatal error items are not surfaced.
+    return null;
   }
-  // Full assistant message
-  if (/agent_message$|assistant_message|message$/i.test(type)) {
-    const text = obj.message ?? obj.text ?? obj.msg?.message ?? "";
-    if (text) return { type: "assistant-text", mode: "replace", text: String(text) };
+
+  if (type === "turn.completed") {
+    return { type: "done", result: { text: "" } };
   }
-  // Completion
-  if (/task_complete|turn.*complete|result|done/i.test(type)) {
-    const text = obj.result?.text ?? obj.text ?? obj.message ?? "";
-    return { type: "done", result: { text: String(text || "") } };
+
+  // A turn-level failure is a real error; item-level "error" items are noise.
+  if (type === "turn.failed" || type === "error") {
+    const msg = obj.error?.message ?? obj.message ?? "run failed";
+    return { type: "error", error: sanitize(String(msg)) };
   }
-  // Errors
-  if (/error/i.test(type)) {
-    return { type: "error", error: sanitize(String(obj.message ?? obj.error ?? "error")) };
-  }
+
   return null;
 }
 
@@ -248,8 +305,39 @@ function extractAccount(out: string): string | null {
   return email ?? null;
 }
 
+/**
+ * Read the user's display identity from the CLI's auth.json id_token claims.
+ * Returns the email (preferred) or name, or null. Only identity claims are read;
+ * the tokens themselves are never returned or logged.
+ */
+async function accountFromAuthJson(env: NodeJS.ProcessEnv): Promise<string | null> {
+  const home = env.CODEX_HOME ?? join(env.HOME ?? homedir(), ".codex");
+  try {
+    const raw = await readFile(join(home, "auth.json"), "utf8");
+    const idToken: string | undefined = JSON.parse(raw)?.tokens?.id_token;
+    if (!idToken) return null;
+    const payload = idToken.split(".")[1];
+    if (!payload) return null;
+    const json = Buffer.from(
+      payload.replace(/-/g, "+").replace(/_/g, "/"),
+      "base64",
+    ).toString("utf8");
+    const claims = JSON.parse(json) as { email?: string; name?: string };
+    return claims.email ?? claims.name ?? null;
+  } catch {
+    return null;
+  }
+}
+
 function stripTrailingPunctuation(url: string): string {
   return url.replace(/[).,]+$/, "");
+}
+
+// Strip ANSI SGR color sequences (ESC[ ... m). Built from the ESC code point so
+// no literal control character lives in the source.
+const ANSI_RE = new RegExp(String.fromCharCode(27) + "\[[0-9;]*m", "g");
+function stripAnsi(s: string): string {
+  return s.replace(ANSI_RE, "");
 }
 
 /** Remove anything token-shaped from CLI output before forwarding to the client. */

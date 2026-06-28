@@ -33,6 +33,7 @@ export interface CodexClient {
   /** Register the popup ref so the client can point/close it. Null = blocked. */
   attachPopup: (popup: Window | null) => void;
   destroy: () => void;
+  isDestroyed: () => boolean;
   readonly endpoints: EndpointMap;
 }
 
@@ -266,6 +267,7 @@ export function createCodexClient(config: CodexClientConfig = {}): CodexClient {
       if (!p) dispatch({ type: "POPUP_BLOCKED" });
     },
     destroy,
+    isDestroyed: () => destroyed,
     endpoints,
   };
 }

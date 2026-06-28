@@ -147,6 +147,27 @@ describe("<CodexAuth> default UI", () => {
     await waitFor(() => expect(screen.getByText(/blocked the popup/i)).toBeTruthy());
   });
 
+  it("survives React StrictMode double-mount and still authenticates (already-logged-in)", async () => {
+    const { StrictMode } = await import("react");
+    vi.stubGlobal(
+      "fetch",
+      routeFetch({
+        "POST /api/codex/session": () => json(200, { ok: true }),
+        "POST /api/codex/login/start": () => json(200, { ok: true, loggedIn: true }),
+        "GET /api/codex/status": () => json(200, { ok: true, account: "me@x.com" }),
+      }),
+    );
+    render(
+      <StrictMode>
+        <CodexAuth />
+      </StrictMode>,
+    );
+    fireEvent.click(screen.getByText("Login with ChatGPT"));
+    // Under StrictMode the client must not be left destroyed — the
+    // {loggedIn:true} path must still flip the UI to the account console.
+    await waitFor(() => expect(screen.getByText("me@x.com")).toBeTruthy(), { timeout: 2000 });
+  });
+
   it("headless render-prop receives state and renders no default UI", () => {
     vi.stubGlobal("fetch", routeFetch({}));
     render(

@@ -1,5 +1,6 @@
 import type { UseCodexAuthResult } from "../useCodexAuth.js";
-import { styles, OPENAI_LOGO } from "./styles.js";
+import { styles } from "./styles.js";
+import { OpenAIIcon } from "./OpenAIIcon.js";
 
 const LABELS: Partial<Record<UseCodexAuthResult["status"], string>> = {
   connecting: "Connecting…",
@@ -16,7 +17,7 @@ export function LoginButton({ auth }: { auth: UseCodexAuthResult }) {
       disabled={busy}
       style={{ ...styles.button, ...(busy ? styles.buttonDisabled : {}) }}
     >
-      <img src={OPENAI_LOGO} alt="" width={18} height={18} />
+      <OpenAIIcon size={18} />
       {label}
     </button>
   );

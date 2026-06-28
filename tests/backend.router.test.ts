@@ -113,6 +113,25 @@ describe("createCodexRouter", () => {
     expect(res.body).toEqual({ ok: true, account: "user@example.com" });
   });
 
+  it("run/stream does NOT abort an async run on request-body close (regression)", async () => {
+    // The runner yields AFTER a tick — mirrors the real CLI's latency. The router
+    // must listen on res-close, not req-close (req closes once the POST body is
+    // read, which would abort the run before any event is produced).
+    const slowRunner = makeRunner({
+      async *run(_ctx, _prompt, signal): AsyncIterable<RunStreamEvent> {
+        await new Promise((r) => setTimeout(r, 30));
+        if (signal?.aborted) return; // if aborted early we'd yield nothing
+        yield { type: "assistant-text", mode: "replace", text: "delayed" };
+        yield { type: "done", result: { text: "delayed" } };
+      },
+    });
+    const agent = request.agent(app(slowRunner));
+    await agent.post("/api/codex/session").set(SAME);
+    const res = await agent.post("/api/codex/run/stream").set(SAME).send({ prompt: "hi" });
+    const lines = res.text.trim().split("\n").map((l) => JSON.parse(l));
+    expect(lines.some((l) => l.type === "assistant-text" && l.text === "delayed")).toBe(true);
+  });
+
   it("run/stream emits NDJSON events", async () => {
     const agent = request.agent(app(makeRunner()));
     await agent.post("/api/codex/session").set(SAME);
