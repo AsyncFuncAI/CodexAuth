@@ -45,12 +45,12 @@ function Hero() {
         <span className="br">&lt;</span>CodexAuth<span className="br"> /&gt;</span>
       </h1>
       <p className="ca-lead">
-        A headless React component for "Login with ChatGPT". Your users sign in with their own
-        ChatGPT account and run prompts on it.
+        Drop a ChatGPT sign-in into any React app. The device-code OAuth flow, the polling, the
+        session handling: all headless, all yours to style.
       </p>
       <p className="ca-lead">
-        <span className="hl">You never pay OpenAI for usage.</span> Tokens stay on your backend,
-        never in the browser.
+        <span className="hl">Tokens never touch the browser.</span> Your users bring their own
+        ChatGPT plan; you ship the button.
       </p>
       <div className="ca-install">
         <span className="dollar">$</span>

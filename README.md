@@ -1,14 +1,13 @@
-# `<CodexAuth />` — Login with ChatGPT
+# `<CodexAuth />`
 
-Add a **Login with ChatGPT** button to your site. Your users log in with their
-**personal ChatGPT account** and run prompts on it — and **you never pay OpenAI
-for usage**. Works on any plan: Free, Plus, or Pro.
+Drop a ChatGPT sign-in into any React app. The device-code OAuth flow, the
+polling, the session handling: all headless, all yours to style. Your users
+bring their own ChatGPT plan (Free, Plus, or Pro); you ship the button.
 
-This is an open-source, headless-first React component + npm package that
-reproduces [login-with-chatgpt.vercel.app](https://login-with-chatgpt.vercel.app/).
-It uses the official Codex CLI **device-code** flow, proxied through a small
-backend you host. **OAuth tokens never touch the browser** — they stay in your
-backend's session, exactly like the Codex CLI keeps them in `~/.codex/auth.json`.
+An open-source, headless-first React component + npm package. It uses the
+official Codex CLI **device-code** flow, proxied through a small backend you
+host. **OAuth tokens never touch the browser**: they stay in your backend's
+session, the same way the Codex CLI keeps them in `~/.codex/auth.json`.
 
 ```
 npm install codex-auth
