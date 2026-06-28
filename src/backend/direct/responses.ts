@@ -17,7 +17,10 @@ export const ORIGINATOR = "codex_cli_rs";
 export const CLI_VERSION = "0.111.0";
 export const USER_AGENT = `codex_cli_rs/${CLI_VERSION} (Linux; x86_64) reqwest`;
 
-const FALLBACK_MODELS = ["gpt-5-codex", "gpt-5", "codex-mini-latest"];
+// Models a ChatGPT-account (not API-key) Codex backend actually accepts. gpt-5.5
+// is verified-accepted; gpt-5-codex / gpt-5 are rejected for ChatGPT accounts, so
+// gpt-5.5 leads. Used only when account-aware /models discovery is blocked.
+const FALLBACK_MODELS = ["gpt-5.5", "gpt-5.1", "gpt-5"];
 
 export interface DirectSession {
   access: string;

@@ -94,8 +94,13 @@ class KvRequestStore implements SessionStore {
     for (const id of this.dirty) {
       const ctx = this.sessions.get(id);
       if (ctx) {
+        // Never persist transient per-request flags — they belong to the
+        // in-flight request, not durable session state. Persisting runInFlight
+        // would wedge every future run with a 429.
+        const { runInFlight, ...persisted } = ctx.data as Record<string, unknown>;
+        void runInFlight;
         ops.push(
-          this.kv.put(KEY_PREFIX + id, JSON.stringify(ctx.data), {
+          this.kv.put(KEY_PREFIX + id, JSON.stringify(persisted), {
             expirationTtl: SESSION_TTL_SECONDS,
           }),
         );

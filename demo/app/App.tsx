@@ -19,10 +19,12 @@ export default function App() {
   );
 }
 
+const REPO = "github.com/AsyncFuncAI/CodexAuth";
+
 function Hero() {
   const [copied, setCopied] = useState(false);
   const copy = () => {
-    navigator.clipboard?.writeText("npm install codex-auth").then(
+    navigator.clipboard?.writeText(`git clone https://${REPO}`).then(
       () => {
         setCopied(true);
         setTimeout(() => setCopied(false), 1200);
@@ -52,13 +54,20 @@ function Hero() {
         <span className="hl">Tokens never touch the browser.</span> Your users bring their own
         ChatGPT plan; you ship the button.
       </p>
-      <div className="ca-install">
+      <a
+        className="ca-install"
+        href={`https://${REPO}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={(e) => {
+          e.preventDefault();
+          copy();
+        }}
+      >
         <span className="dollar">$</span>
-        npm install codex-auth
-        <button type="button" onClick={copy}>
-          {copied ? "copied" : "copy"}
-        </button>
-      </div>
+        git clone {REPO}
+        <span className="ca-install-copy">{copied ? "copied" : "copy"}</span>
+      </a>
     </header>
   );
 }
@@ -113,15 +122,18 @@ function LoginView({ auth }: { auth: UseCodexAuthResult }) {
 function Console({ auth }: { auth: UseCodexAuthResult }) {
   const [output, setOutput] = useState("");
   const [busy, setBusy] = useState(false);
+  const [prompt, setPrompt] = useState(PROMPT);
   const label = (auth.account || "ChatGPT account").trim();
   const initial = (label[0] || "U").toUpperCase();
 
   const send = () => {
     if (busy) return;
+    const text = prompt.trim();
+    if (!text) return;
     setBusy(true);
     setOutput("");
     let acc = "";
-    auth.run(PROMPT, {
+    auth.run(text, {
       onText: (text, mode) => {
         acc = mode === "replace" ? text : acc + text;
         setOutput(acc);
@@ -171,8 +183,26 @@ function Console({ auth }: { auth: UseCodexAuthResult }) {
         <span className="fn">Codex</span>();{"\n\n"}
         <span className="kw">const</span> res = <span className="kw">await</span> codex.responses.
         <span className="fn">create</span>(&#123;{"\n"}
-        {"  "}model: <span className="str">"gpt-5.5"</span>,{"\n"}
-        {"  "}input: <span className="str">"{PROMPT}"</span>,{"\n"}
+        {"  "}input:{" "}
+        <span className="str">
+          "
+          <span
+            className="ca-input"
+            contentEditable
+            suppressContentEditableWarning
+            spellCheck={false}
+            role="textbox"
+            aria-label="prompt"
+            onInput={(e) => setPrompt(e.currentTarget.textContent ?? "")}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !(e.metaKey || e.ctrlKey)) e.preventDefault();
+            }}
+          >
+            {PROMPT}
+          </span>
+          "
+        </span>
+        ,{"\n"}
         &#125;);
       </pre>
 

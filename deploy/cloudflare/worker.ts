@@ -32,9 +32,11 @@ export default {
         kv: env.CODEX_SESSIONS,
         cookieSecret: env.COOKIE_SECRET,
         basePath: BASE_PATH,
-        runner: directRunner({
-          models: env.CODEX_MODEL ? [env.CODEX_MODEL] : undefined,
-        }),
+        // Force gpt-5.5: it's the model the ChatGPT-account responses backend
+        // accepts. Account-aware /models discovery is often Cloudflare-blocked
+        // from a Worker's datacenter IP, and the generic fallbacks (gpt-5-codex,
+        // gpt-5) are rejected — verified live.
+        runner: directRunner({ models: [env.CODEX_MODEL ?? "gpt-5.5"] }),
       });
     }
 

@@ -139,28 +139,45 @@ body {
   font-family: var(--mono);
   font-size: 13px;
   color: var(--text);
+  text-decoration: none;
   border: 1px solid var(--line);
   border-radius: var(--radius);
   padding: 11px 14px;
   width: fit-content;
+  transition: border-color 160ms ease;
+}
+.ca-install:hover {
+  border-color: var(--text-faint);
 }
 .ca-install .dollar {
   color: var(--text-faint);
 }
-.ca-install button {
+.ca-install .ca-install-copy {
   margin-left: 8px;
-  background: transparent;
-  border: none;
   color: var(--text-faint);
-  cursor: pointer;
-  font-family: var(--mono);
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  transition: color 160ms ease;
 }
-.ca-install button:hover {
+.ca-install:hover .ca-install-copy {
   color: var(--text);
+}
+
+/* editable prompt inside the code snippet */
+.ca-input {
+  outline: none;
+  border-radius: 3px;
+  padding: 0 2px;
+  box-shadow: inset 0 -1px 0 var(--line);
+  cursor: text;
+  transition: box-shadow 160ms ease;
+}
+.ca-input:hover {
+  box-shadow: inset 0 -1px 0 var(--text-faint);
+}
+.ca-input:focus {
+  box-shadow: inset 0 -1px 0 var(--text);
+  background: rgba(255, 255, 255, 0.04);
 }
 
 /* ---- panel (right) ---- */
