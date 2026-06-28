@@ -12,7 +12,16 @@
     "isolatedModules": true,
     "declaration": true,
     "noEmit": true,
-    "types": ["node", "vitest/globals"]
+    "types": ["node", "vitest/globals"],
+    "baseUrl": ".",
+    "paths": {
+      "codex-auth": ["./src/index.ts"],
+      "codex-auth/run": ["./src/run.ts"],
+      "codex-auth/backend": ["./src/backend/index.ts"],
+      "codex-auth/backend/direct": ["./src/backend/direct/index.ts"],
+      "codex-auth/backend/next": ["./src/backend/next/index.ts"],
+      "codex-auth/backend/worker": ["./src/backend/worker/index.ts"]
+    }
   },
   "include": ["src", "tests", "demo"]
 }

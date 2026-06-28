@@ -14,10 +14,6 @@ Your users sign in with their own ChatGPT account and run prompts on it.
 
 [Quick start](#quick-start) · [Two runners](#pick-a-runner) · [Headless](#headless-usage) · [Deploy](./DEPLOYMENT.md) · [Security](./SECURITY.md)
 
-> ⚠️ **For research & education only.** This uses OpenAI's Codex client off-label
-> and likely violates the ChatGPT Terms of Use. **You are solely responsible for
-> your use.** [Read the disclaimer ↓](#%EF%B8%8F-disclaimer--read-before-you-use-this)
-
 </div>
 
 <p align="center">
