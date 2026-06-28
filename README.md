@@ -1,18 +1,14 @@
 <div align="center">
 
-<!-- Banner: drop a docs/screenshots/banner.png and uncomment the line below.
-<img src="./docs/screenshots/banner.png" alt="CodexAuth" width="100%" />
--->
+<img src="./docs/screenshots/banner.png" alt="CodexAuth — Login with ChatGPT, as a React component" width="100%" />
 
-# `<CodexAuth />`
-
-### Login with ChatGPT, as a React component.
+<br /><br />
 
 Your users sign in with their own ChatGPT account and run prompts on it.
 **You never pay OpenAI** — they use their own plan.
 
 [![CI](https://github.com/AsyncFuncAI/CodexAuth/actions/workflows/ci.yml/badge.svg)](https://github.com/AsyncFuncAI/CodexAuth/actions/workflows/ci.yml)
-[![npm](https://img.shields.io/npm/v/codex-auth.svg)](https://www.npmjs.com/package/codex-auth)
+[![install](https://img.shields.io/badge/install-git%20clone%20%2B%20npm%20link-black.svg)](#install)
 [![license](https://img.shields.io/badge/license-MIT-black.svg)](./LICENSE)
 [![React](https://img.shields.io/badge/React-17%2B-black.svg)](https://react.dev)
 
@@ -36,16 +32,33 @@ A headless React component that adds a **"Login with ChatGPT"** button to your a
 Click it, your user approves on `auth.openai.com`, and you can run prompts on their
 ChatGPT plan. The OAuth flow, the popup, the polling, the sessions — all handled.
 
-```bash
-npm install codex-auth
-```
-
 **OAuth tokens never touch the browser.** They live on a backend you control; the
 browser only ever sees an `HttpOnly` cookie and the streamed output.
 
 <p align="center">
   <img src="./docs/screenshots/prompt.png" alt="CodexAuth console running a prompt on the user's ChatGPT account" width="900" />
 </p>
+
+---
+
+## Install
+
+> **Not published to npm — on purpose** (see the [disclaimer](#%EF%B8%8F-disclaimer--read-before-you-use-this)).
+> Use it from a clone via `npm link`.
+
+```bash
+# 1. clone and build this repo
+git clone https://github.com/AsyncFuncAI/CodexAuth
+cd CodexAuth && npm install && npm run build && npm link
+
+# 2. in YOUR app, link it
+cd /path/to/your-app
+npm link codex-auth
+```
+
+Now `import { CodexAuth } from "codex-auth"` resolves to your local clone.
+(Prefer a lockfile entry? Use `"codex-auth": "file:../CodexAuth"` in your app's
+`package.json` instead of `npm link`.)
 
 ---
 

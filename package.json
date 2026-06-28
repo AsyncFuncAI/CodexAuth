@@ -1,7 +1,8 @@
 {
   "name": "codex-auth",
   "version": "0.1.0",
-  "description": "Login with ChatGPT — a headless React component + npm package that lets your users authenticate with their personal ChatGPT account (Codex device-code flow) and run prompts on it. You never pay OpenAI for usage.",
+  "private": true,
+  "description": "Login with ChatGPT — a headless React component that lets your users authenticate with their personal ChatGPT account (Codex device-code flow) and run prompts on it. Research/education only; not published to npm. Use via git clone + npm link.",
   "keywords": [
     "chatgpt",
     "codex",
