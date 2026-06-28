@@ -1,0 +1,408 @@
+/*
+ * <CodexAuth /> demo — Geist / Vercel dual-tone aesthetic.
+ * STRICTLY monochrome: off-black + off-white, no color accent. Geist Sans +
+ * Geist Mono, Swiss precision, hairline rules, generous negative space.
+ * Motion is minimal (this is a tool, not a showcase) and respects reduced-motion.
+ */
+
+/* Geist (OFL, by Vercel) via CDN @font-face. */
+@font-face {
+  font-family: "Geist";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("https://cdn.jsdelivr.net/npm/geist@1/dist/fonts/geist-sans/Geist-Variable.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Geist Mono";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("https://cdn.jsdelivr.net/npm/geist@1/dist/fonts/geist-mono/GeistMono-Variable.woff2") format("woff2");
+}
+
+:root {
+  /* Dual tone only. */
+  --ink: #0a0a0a;
+  --paper: #ffffff;
+  --bg: #0a0a0a;
+  --panel: #0a0a0a;
+  --surface: #141414;
+  --line: rgba(255, 255, 255, 0.14);
+  --line-soft: rgba(255, 255, 255, 0.08);
+  --text: #ededed;
+  --text-dim: #a1a1a1;
+  --text-faint: #6e6e6e;
+
+  --sans: "Geist", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --radius: 6px;
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+html,
+body,
+#root {
+  margin: 0;
+  min-height: 100%;
+  background: var(--bg);
+}
+body {
+  font-family: var(--sans);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Swiss split with a hairline gutter and faint frame. */
+.ca-shell {
+  position: relative;
+  min-height: 100dvh;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  max-width: 1320px;
+  margin: 0 auto;
+  border-left: 1px solid var(--line-soft);
+  border-right: 1px solid var(--line-soft);
+}
+@media (max-width: 880px) {
+  .ca-shell {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ---- hero (left), documentation-spec vibe ---- */
+.ca-hero {
+  position: relative;
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 56px 60px;
+  border-right: 1px solid var(--line-soft);
+  opacity: 0;
+  animation: ca-rise 500ms var(--ease-out) forwards;
+}
+@media (max-width: 880px) {
+  .ca-hero {
+    border-right: none;
+    border-bottom: 1px solid var(--line-soft);
+  }
+}
+
+/* tiny mono spec label, top-left, Geist-poster style */
+.ca-spec {
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 1.7;
+  letter-spacing: 0.02em;
+  color: var(--text-faint);
+  text-transform: uppercase;
+  margin-bottom: 40px;
+}
+.ca-spec b {
+  color: var(--text-dim);
+  font-weight: 400;
+}
+
+.ca-title {
+  font-family: var(--sans);
+  font-weight: 600;
+  font-size: clamp(40px, 6vw, 68px);
+  line-height: 0.98;
+  letter-spacing: -0.04em;
+  margin: 0 0 24px;
+}
+.ca-title .br {
+  color: var(--text-faint);
+  font-weight: 400;
+}
+.ca-lead {
+  color: var(--text-dim);
+  font-size: 17px;
+  line-height: 1.5;
+  max-width: 44ch;
+  margin: 0 0 12px;
+}
+.ca-lead .hl {
+  color: var(--text);
+}
+
+.ca-install {
+  margin-top: 32px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 11px 14px;
+  width: fit-content;
+}
+.ca-install .dollar {
+  color: var(--text-faint);
+}
+.ca-install button {
+  margin-left: 8px;
+  background: transparent;
+  border: none;
+  color: var(--text-faint);
+  cursor: pointer;
+  font-family: var(--mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  transition: color 160ms ease;
+}
+.ca-install button:hover {
+  color: var(--text);
+}
+
+/* ---- panel (right) ---- */
+.ca-panel {
+  position: relative;
+  align-self: stretch;
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* logged-out */
+.ca-login-view {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  text-align: center;
+  opacity: 0;
+  animation: ca-rise 400ms var(--ease-out) forwards;
+}
+
+/* The button: white on black (the one inversion that defines dual-tone). */
+.ca-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--sans);
+  font-size: 15px;
+  font-weight: 500;
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+  padding: 12px 20px;
+  cursor: pointer;
+  transition:
+    transform 150ms var(--ease-out),
+    background 150ms ease,
+    color 150ms ease,
+    border-color 150ms ease;
+}
+.ca-btn:active {
+  transform: scale(0.97);
+}
+.ca-btn-primary {
+  background: var(--paper);
+  color: var(--ink);
+  border-color: var(--paper);
+}
+.ca-btn-primary:hover {
+  background: #e6e6e6;
+}
+.ca-btn-primary:disabled {
+  opacity: 0.55;
+  cursor: default;
+  transform: none;
+}
+
+.ca-code-card {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+  max-width: 320px;
+}
+.ca-code-label {
+  font-family: var(--mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-faint);
+  margin-bottom: 10px;
+}
+.ca-code {
+  font-family: var(--mono);
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--text);
+  cursor: pointer;
+}
+.ca-helper {
+  font-size: 12.5px;
+  color: var(--text-faint);
+  margin-top: 14px;
+  line-height: 1.5;
+}
+.ca-helper a {
+  color: var(--text-dim);
+  text-decoration: underline;
+}
+
+/* logged-in console */
+.ca-console {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  opacity: 0;
+  animation: ca-rise 400ms var(--ease-out) forwards;
+}
+.ca-account {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--line-soft);
+}
+.ca-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--paper);
+  color: var(--ink);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 14px;
+  overflow: hidden;
+}
+.ca-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.ca-account-email {
+  flex: 1;
+  font-family: var(--mono);
+  font-size: 13.5px;
+}
+.ca-account-status {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-faint);
+}
+.ca-disconnect {
+  background: transparent;
+  border: none;
+  color: var(--text-faint);
+  font-size: 13px;
+  cursor: pointer;
+  transition: color 150ms ease;
+}
+.ca-disconnect:hover {
+  color: var(--text);
+}
+
+.ca-snippet {
+  font-family: var(--mono);
+  font-size: 13px;
+  line-height: 1.75;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-x: auto;
+  color: var(--text);
+}
+/* dual-tone syntax: only weight + dim, no hue */
+.ca-snippet .kw {
+  color: var(--text-faint);
+}
+.ca-snippet .fn {
+  color: var(--text);
+  font-weight: 500;
+}
+.ca-snippet .str {
+  color: var(--text-dim);
+}
+
+.ca-send {
+  width: 100%;
+  justify-content: center;
+  padding: 13px;
+}
+.ca-send-hint {
+  text-align: center;
+  font-family: var(--mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-faint);
+}
+
+.ca-output-label {
+  font-family: var(--mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-faint);
+}
+.ca-output {
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--text);
+  white-space: pre-wrap;
+  min-height: 56px;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+}
+.ca-output .placeholder {
+  color: var(--text-faint);
+}
+.ca-cursor {
+  display: inline-block;
+  width: 7px;
+  height: 1.05em;
+  vertical-align: text-bottom;
+  background: var(--text);
+  margin-left: 2px;
+  animation: ca-blink 1s steps(2) infinite;
+}
+.ca-link {
+  color: var(--text);
+  text-decoration: underline;
+}
+
+@keyframes ca-rise {
+  to {
+    opacity: 1;
+  }
+}
+@keyframes ca-blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ca-hero,
+  .ca-login-view,
+  .ca-console {
+    animation: none;
+    opacity: 1;
+  }
+  .ca-cursor {
+    animation: none;
+  }
+  .ca-btn:active {
+    transform: none;
+  }
+}
