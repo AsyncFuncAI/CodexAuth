@@ -1,0 +1,85 @@
+{
+  "name": "codex-auth",
+  "version": "0.1.0",
+  "description": "Login with ChatGPT — a headless React component + npm package that lets your users authenticate with their personal ChatGPT account (Codex device-code flow) and run prompts on it. You never pay OpenAI for usage.",
+  "keywords": [
+    "chatgpt",
+    "codex",
+    "openai",
+    "oauth",
+    "login-with-chatgpt",
+    "react",
+    "device-code",
+    "auth"
+  ],
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": [
+    "**/*.css",
+    "./dist/ui*"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./run": {
+      "types": "./dist/run.d.ts",
+      "import": "./dist/run.js",
+      "require": "./dist/run.cjs"
+    },
+    "./backend": {
+      "node": {
+        "types": "./dist/backend.d.ts",
+        "import": "./dist/backend.js",
+        "require": "./dist/backend.cjs"
+      }
+    }
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint .",
+    "demo": "node --experimental-strip-types demo/server/index.ts & vite --config demo/vite.config.ts"
+  },
+  "peerDependencies": {
+    "react": ">=17",
+    "react-dom": ">=17"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    },
+    "react-dom": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@testing-library/react": "^16.1.0",
+    "@types/cookie-signature": "^1.1.2",
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.10.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@types/supertest": "^6.0.2",
+    "cookie-signature": "^1.2.2",
+    "express": "^5.0.0",
+    "jsdom": "^25.0.1",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "supertest": "^7.0.0",
+    "tsup": "^8.3.5",
+    "typescript": "^5.7.0",
+    "vite": "^6.0.0",
+    "vitest": "^2.1.8"
+  }
+}
