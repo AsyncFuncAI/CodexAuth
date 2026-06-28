@@ -1,5 +1,6 @@
 import { spawn } from "node:child_process";
 import { readFile } from "node:fs/promises";
+import { mkdirSync } from "node:fs";
 import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
 import type { RunStreamEvent } from "../../core/contract.js";
@@ -52,14 +53,20 @@ export function defaultCliRunner(opts: CliRunnerOptions = {}): CodexRunner {
 
   /**
    * Build the env for a given session: a per-session CODEX_HOME so the CLI's
-   * auth.json is isolated per user. Without a session, fall back to baseEnv
-   * (used only by internal helpers that already have a scoped env).
+   * auth.json is isolated per user. The directory MUST exist before the CLI runs
+   * (codex errors out with "CODEX_HOME ... does not exist" otherwise), so we
+   * create it here. Without a session, fall back to baseEnv (used only by
+   * internal helpers that already have a scoped env).
    */
   function envForSession(ctx?: SessionCtx): NodeJS.ProcessEnv {
     if (!ctx) return baseEnv;
-    const home =
-      (ctx.data.codexHome as string | undefined) ??
-      ((ctx.data.codexHome = join(homeRoot, ctx.id)) as string);
+    let home = ctx.data.codexHome as string | undefined;
+    if (!home) {
+      home = join(homeRoot, ctx.id);
+      ctx.data.codexHome = home;
+    }
+    // Ensure the directory exists (idempotent; recursive creates the root too).
+    mkdirSync(home, { recursive: true });
     return { ...baseEnv, CODEX_HOME: home };
   }
 
@@ -103,15 +110,19 @@ export function defaultCliRunner(opts: CliRunnerOptions = {}): CodexRunner {
       // Kick off the device-auth flow. We read stdout until we see the login URL
       // + user code, then keep the process alive in the session (the CLI polls
       // OpenAI itself and writes auth.json on success).
-      const { proc, stderr } = exec(["login", "--device-auth"], { env });
+      const { proc, stdout, stderr } = exec(["login", "--device-auth"], { env });
       const parsed = await readDeviceLoginInfo(proc).catch(() => null);
 
       if (!parsed) {
-        const err = sanitize(await stderr);
+        const out = (await stdout) + " " + (await stderr);
         proc.kill();
-        // Surface as not-enabled-style guidance rather than leaking stderr.
-        void err;
-        return { errorCode: "DEVICE_AUTH_NOT_ENABLED" };
+        // Only report DEVICE_AUTH_NOT_ENABLED when the CLI actually says device
+        // auth is disabled — otherwise it's a different failure and the misleading
+        // "enable device auth" message would send the user on a wrong fix.
+        if (/device.?code|not enabled|enable .*authoriz|security settings/i.test(out)) {
+          return { errorCode: "DEVICE_AUTH_NOT_ENABLED" };
+        }
+        throw new Error("could not start device login: " + (sanitize(out).trim() || "no device code emitted"));
       }
 
       // Hold the process on the session so the CLI can finish the poll/exchange.

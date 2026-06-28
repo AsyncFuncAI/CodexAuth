@@ -1,6 +1,36 @@
 // @vitest-environment node
 import { describe, it, expect } from "vitest";
-import { mapCodexEvent } from "../src/backend/express/cliRunner.js";
+import { existsSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { defaultCliRunner, mapCodexEvent } from "../src/backend/express/cliRunner.js";
+import type { SessionCtx } from "../src/backend/types.js";
+
+describe("per-session CODEX_HOME isolation", () => {
+  it("creates the session's CODEX_HOME dir before spawning (codex errors if it is missing)", async () => {
+    const root = join(tmpdir(), `codex-auth-test-${Date.now()}`);
+    // Use `true` as the binary so no real CLI runs; we only assert dir creation
+    // happens as a side effect of building the per-session env.
+    const runner = defaultCliRunner({ codexBin: "true", codexHomeRoot: root });
+    const ctx: SessionCtx = { id: "sess-abc", data: {} };
+    await runner.getStatus(ctx); // triggers envForSession → mkdir
+    const home = ctx.data.codexHome as string;
+    expect(home).toBe(join(root, "sess-abc"));
+    expect(existsSync(home)).toBe(true);
+    rmSync(root, { recursive: true, force: true });
+  });
+
+  it("derives a distinct CODEX_HOME per session id", async () => {
+    const root = join(tmpdir(), `codex-auth-test2-${Date.now()}`);
+    const runner = defaultCliRunner({ codexBin: "true", codexHomeRoot: root });
+    const a: SessionCtx = { id: "a", data: {} };
+    const b: SessionCtx = { id: "b", data: {} };
+    await runner.getStatus(a);
+    await runner.getStatus(b);
+    expect(a.data.codexHome).not.toBe(b.data.codexHome);
+    rmSync(root, { recursive: true, force: true });
+  });
+});
 
 describe("mapCodexEvent (codex exec --json vocab)", () => {
   it("maps item.completed agent_message → assistant-text replace", () => {
