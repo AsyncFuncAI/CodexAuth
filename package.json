@@ -36,6 +36,11 @@
         "require": "./dist/backend.cjs"
       }
     },
+    "./backend/direct": {
+      "types": "./dist/backend-direct.d.ts",
+      "import": "./dist/backend-direct.js",
+      "require": "./dist/backend-direct.cjs"
+    },
     "./backend/next": {
       "node": {
         "types": "./dist/backend-next.d.ts",

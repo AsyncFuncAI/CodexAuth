@@ -37,18 +37,39 @@ backend. **The component gives you the hard 80%** — the popup flow, device-cod
 UX, polling, sessions, and a security-hardened HTTP contract. **You bring a small
 backend endpoint** (one of the drop-in adapters below).
 
-**Deployment in one line:** frontend deploys anywhere (incl. Vercel); the backend
-runs on a *persistent* host (Railway, Render, Docker, a VPS) because the reference
-runner shells out to the `codex` CLI. See [`DEPLOYMENT.md`](./DEPLOYMENT.md) — it
-covers Railway (one-click), Docker, Next.js, and the Cloudflare-Worker proxy, and
-explains why Vercel *serverless functions* can't run the CLI backend.
+### Two runners — pick how the backend talks to OpenAI
 
-Backend adapters (all share one hardened core):
+The component is the same; the **runner** decides how your backend reaches OpenAI:
+
+| Runner | How it works | Deploys on |
+|---|---|---|
+| **`directRunner`** (`codex-auth/backend/direct`) | Pure `fetch` — the device-code grant + the Codex `responses` backend directly | **Anywhere, incl. Vercel serverless / edge.** No binary, no persistent process |
+| **`defaultCliRunner`** (`codex-auth/backend`) | Shells out to the official `codex` CLI | A **persistent** Node host (Railway, Render, Docker, a VPS) — not Vercel functions |
+
+> `directRunner` is the easy default for most apps: it has no native dependency, so
+> the whole thing (frontend + backend) can live in one Vercel/Next.js deploy.
+> `defaultCliRunner` exists for when you'd rather lean on the installed CLI's auth.
+> Both implement the same `CodexRunner` interface and hold tokens server-side.
+
+```ts
+// serverless-friendly: no codex binary needed
+import { createCodexRouter } from "codex-auth/backend";
+import { directRunner } from "codex-auth/backend/direct";
+
+createCodexRouter({ runner: directRunner(), cookieSecret: process.env.COOKIE_SECRET! });
+```
+
+See [`DEPLOYMENT.md`](./DEPLOYMENT.md) for Vercel, Railway (one-click), Docker, and
+Next.js, and [`SECURITY.md`](./SECURITY.md) for the off-label-API caveats `directRunner`
+inherits.
+
+Backend adapters (all share one hardened core, work with either runner):
 
 | Import | For |
 |---|---|
 | `codex-auth/backend` | Express (`createCodexRouter`) — the generic reference |
-| `codex-auth/backend/next` | Next.js App Router route handler (Node runtime) |
+| `codex-auth/backend/next` | Next.js App Router route handler |
+| `codex-auth/backend/direct` | the serverless-friendly `directRunner` |
 | `codex-auth/backend/worker` | Cloudflare Worker — proxy in front of a Node backend |
 
 ---

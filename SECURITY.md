@@ -70,6 +70,27 @@ stderr (redacts JWT/key/path patterns) before forwarding any error.
   default — the account email is **not** persisted (opt in via `persistAccount`),
   to avoid PII readable by an XSS.
 
+## Off-label API use (`directRunner`)
+
+Both runners reuse OpenAI's **first-party Codex CLI OAuth client** off-label, and
+the `directRunner` additionally calls `chatgpt.com/backend-api/codex/*` directly
+(the same backend the CLI talks to) with a CLI-looking `User-Agent`. Understand
+the tradeoffs before shipping:
+
+- **Not a public/supported API.** The client id and backend belong to OpenAI's
+  Codex tooling. There is no official program letting third-party apps consume a
+  user's ChatGPT subscription — you are using a first-party credential off-label.
+- **It can break or get accounts limited.** These endpoints are undocumented and
+  may change; driving usage this way may violate OpenAI's terms and could put
+  users' accounts or the shared client id at risk.
+- **Each user must enable device-code authorization once** (ChatGPT → Settings →
+  Security & Login). Your app cannot toggle this for them.
+- **Fine for experiments, demos, and personal tools. Don't build a business on
+  it.** For production, use the official OpenAI API with your own key, or have
+  each user bring their own key.
+
+This is a product/ToS caveat, not a code vulnerability — but ship with it in mind.
+
 ## Reporting
 
 Found an issue? Open a private security advisory rather than a public issue.
