@@ -3,7 +3,6 @@
   "name": "codexauth",
   "main": "worker.ts",
   "compatibility_date": "2025-06-01",
-  "compatibility_flags": ["nodejs_compat"],
   "workers_dev": false,
   "assets": {
     "directory": "./public",
@@ -11,12 +10,6 @@
     "not_found_handling": "single-page-application",
     "run_worker_first": ["/api/*"]
   },
-  "kv_namespaces": [
-    {
-      "binding": "CODEX_SESSIONS",
-      "id": "18d05b5f9a9e470eb14e69370f15a9ff"
-    }
-  ],
   "routes": [
     {
       "pattern": "codexauth.sharenow.today",
@@ -24,6 +17,7 @@
     }
   ],
   "vars": {
-    "CODEX_MODEL": "gpt-5.5"
+    // The box VM's public HTTPS origin (clean IP that can reach chatgpt.com).
+    "CODEX_BACKEND_ORIGIN": "https://REDACTED.on.ascii.dev"
   }
 }
