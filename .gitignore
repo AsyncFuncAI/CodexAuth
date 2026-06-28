@@ -5,3 +5,4 @@ dist/
 .DS_Store
 .claude/worktrees/
 demo/dist/
+deploy/cloudflare/public/

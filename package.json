@@ -95,6 +95,7 @@
     }
   },
   "devDependencies": {
+    "@cloudflare/workers-types": "^4.20260628.1",
     "@testing-library/react": "^16.1.0",
     "@types/cookie-signature": "^1.1.2",
     "@types/express": "^5.0.0",
