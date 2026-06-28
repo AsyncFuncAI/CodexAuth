@@ -6,3 +6,4 @@ dist/
 .claude/worktrees/
 demo/dist/
 deploy/cloudflare/public/
+.wrangler/
