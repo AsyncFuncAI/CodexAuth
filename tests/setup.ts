@@ -4,10 +4,8 @@
 import { TextEncoder, TextDecoder } from "node:util";
 
 if (typeof globalThis.TextEncoder === "undefined") {
-  // @ts-expect-error -- assigning the Node impl onto the global
-  globalThis.TextEncoder = TextEncoder;
+  (globalThis as { TextEncoder: unknown }).TextEncoder = TextEncoder;
 }
 if (typeof globalThis.TextDecoder === "undefined") {
-  // @ts-expect-error -- assigning the Node impl onto the global
-  globalThis.TextDecoder = TextDecoder;
+  (globalThis as { TextDecoder: unknown }).TextDecoder = TextDecoder;
 }
