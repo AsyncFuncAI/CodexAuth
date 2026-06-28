@@ -89,7 +89,15 @@ the tradeoffs before shipping:
   it.** For production, use the official OpenAI API with your own key, or have
   each user bring their own key.
 
-This is a product/ToS caveat, not a code vulnerability — but ship with it in mind.
+**OpenAI's Terms of Use explicitly prohibit** "reselling access or using ChatGPT
+to power third-party services," "sharing your account credentials or making your
+account available to anyone else," and "automatically or programmatically
+extracting data." Powering an app for other users with this software falls under
+those prohibitions. **You are solely responsible** for your use; the authors
+provide it as-is, with no warranty and no liability. See the **Disclaimer** in the
+[README](./README.md#%EF%B8%8F-disclaimer--read-before-you-use-this).
+
+This is a product/ToS issue, not a code vulnerability — but ship with it in mind.
 
 ## Reporting
 
