@@ -1,4 +1,11 @@
-// codex-auth — public API barrel. (React layer is added in U9.)
+// codex-auth — public API barrel.
+export { CodexAuth } from "./react/CodexAuth.js";
+export type { CodexAuthProps } from "./react/CodexAuth.js";
+export { useCodexAuth } from "./react/useCodexAuth.js";
+export type {
+  UseCodexAuthOptions,
+  UseCodexAuthResult,
+} from "./react/useCodexAuth.js";
 export { createCodexClient } from "./core/createCodexClient.js";
 export type { CodexClient } from "./core/createCodexClient.js";
 export { resolveEndpoints, DEFAULT_BASE_PATH } from "./core/endpoints.js";

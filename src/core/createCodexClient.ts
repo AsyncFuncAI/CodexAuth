@@ -30,7 +30,7 @@ export interface CodexClient {
   logout: () => Promise<void>;
   resumeFromStorage: () => Promise<boolean>;
   run: (prompt: string, handlers?: RunHandlers) => RunController;
-  /** Register the popup ref so the client can point/close it. */
+  /** Register the popup ref so the client can point/close it. Null = blocked. */
   attachPopup: (popup: Window | null) => void;
   destroy: () => void;
   readonly endpoints: EndpointMap;
@@ -263,6 +263,7 @@ export function createCodexClient(config: CodexClientConfig = {}): CodexClient {
     run: (prompt, handlers) => runClient.run(prompt, handlers),
     attachPopup: (p) => {
       popup = p;
+      if (!p) dispatch({ type: "POPUP_BLOCKED" });
     },
     destroy,
     endpoints,
