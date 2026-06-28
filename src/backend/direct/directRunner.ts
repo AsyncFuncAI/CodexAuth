@@ -64,8 +64,11 @@ export function directRunner(opts: DirectRunnerOptions = {}): CodexRunner {
     if (!s.creds) return null;
     // Refresh slightly before expiry.
     if (s.creds.expires - Date.now() < 60_000) {
+      const prevAccount = s.creds.account;
       try {
-        s.creds = await refreshAccessToken(s.creds.refresh, f);
+        const refreshed = await refreshAccessToken(s.creds.refresh, f);
+        // A refresh response may omit the id_token; keep the known email/name.
+        s.creds = { ...refreshed, account: refreshed.account ?? prevAccount };
       } catch {
         s.creds = undefined;
         return null;

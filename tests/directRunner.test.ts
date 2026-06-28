@@ -5,13 +5,18 @@ import { accountIdFrom } from "../src/backend/direct/oauth.js";
 import type { SessionCtx } from "../src/backend/types.js";
 import type { RunStreamEvent } from "../src/core/contract.js";
 
-// Build a fake access token JWT whose claim carries the chatgpt_account_id.
-function fakeAccessToken(accountId: string, email = "me@example.com"): string {
+function jwt(payload: object): string {
   const header = Buffer.from(JSON.stringify({ alg: "none" })).toString("base64url");
-  const payload = Buffer.from(
-    JSON.stringify({ email, "https://api.openai.com/auth": { chatgpt_account_id: accountId } }),
-  ).toString("base64url");
-  return `${header}.${payload}.sig`;
+  const body = Buffer.from(JSON.stringify(payload)).toString("base64url");
+  return `${header}.${body}.sig`;
+}
+// REAL shape: the access token carries the account-id claim but NO email/name;
+// email/name live in the id_token. (Verified against ~/.codex/auth.json.)
+function fakeAccessToken(accountId: string): string {
+  return jwt({ sub: "user", "https://api.openai.com/auth": { chatgpt_account_id: accountId } });
+}
+function fakeIdToken(email: string): string {
+  return jwt({ email, name: "Test User" });
 }
 
 const json = (status: number, body: unknown, headers: Record<string, string> = {}) =>
@@ -41,7 +46,12 @@ describe("directRunner — device flow over mocked fetch", () => {
   }
 
   const token = fakeAccessToken("acct-9");
-  const tokenBody = { access_token: token, refresh_token: "r1", expires_in: 3600 };
+  const tokenBody = {
+    access_token: token,
+    refresh_token: "r1",
+    id_token: fakeIdToken("me@example.com"),
+    expires_in: 3600,
+  };
 
   it("startDeviceLogin returns a login URL + user code", async () => {
     const f = mockFetch({

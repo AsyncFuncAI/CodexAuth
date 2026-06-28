@@ -27,6 +27,8 @@ const JWT_CLAIM = "https://api.openai.com/auth";
 export interface OAuthTokens {
   access: string;
   refresh: string;
+  /** The id_token, when the grant returned one. Carries email/name claims. */
+  idToken?: string;
   /** Absolute epoch-ms expiry of the access token. */
   expires: number;
 }
@@ -67,7 +69,8 @@ function accountIdFrom(accessToken: string): string | null {
   return typeof id === "string" && id.length > 0 ? id : null;
 }
 
-function accountLabelFrom(token: string): string | undefined {
+function accountLabelFrom(token: string | undefined): string | undefined {
+  if (!token) return undefined;
   const c = decodeJwt(token) as { email?: string; name?: string } | null;
   return c?.email ?? c?.name ?? undefined;
 }
@@ -89,17 +92,19 @@ async function readTokens(res: Response, op: string): Promise<OAuthTokens> {
   return {
     access: json.access_token,
     refresh: json.refresh_token,
+    idToken: json.id_token,
     expires: Date.now() + json.expires_in * 1000,
   };
 }
 
-function credentials(tokens: OAuthTokens, idToken?: string): OAuthCredentials {
+function credentials(tokens: OAuthTokens): OAuthCredentials {
   const accountId = accountIdFrom(tokens.access);
   if (!accountId) throw new Error("could not extract chatgpt_account_id from access token");
+  // email/name live in the id_token, NOT the access token — prefer it.
   return {
     ...tokens,
     accountId,
-    account: accountLabelFrom(idToken ?? tokens.access),
+    account: accountLabelFrom(tokens.idToken) ?? accountLabelFrom(tokens.access),
   };
 }
 
