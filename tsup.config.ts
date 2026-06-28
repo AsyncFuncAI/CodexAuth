@@ -5,6 +5,8 @@ export default defineConfig({
     index: "src/index.ts",
     run: "src/run.ts",
     backend: "src/backend/index.ts",
+    "backend-next": "src/backend/next/index.ts",
+    "backend-worker": "src/backend/worker/index.ts",
   },
   format: ["esm", "cjs"],
   dts: true,

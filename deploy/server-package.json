@@ -1,0 +1,9 @@
+{
+  "name": "codex-auth-backend",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "codex-auth": "latest",
+    "express": "^5.0.0"
+  }
+}

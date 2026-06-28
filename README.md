@@ -19,6 +19,41 @@ npm install codex-auth
 
 ---
 
+## Why this needs a backend (important)
+
+`<CodexAuth>` is a **drop-in component for an app that has a backend** — not a
+browser-only widget. Here's why, in one paragraph:
+
+The whole point is that your users authenticate with their **own ChatGPT
+account** and you **never pay OpenAI**. That means real OAuth tokens for their
+account exist somewhere. If those tokens lived in the browser, any XSS could
+steal them and hijack the user's ChatGPT account. So the security model is
+**tokens never touch the browser** — they live on a server you control, which
+talks to OpenAI and runs the prompts. The browser only ever sees an `HttpOnly`
+cookie and the streamed output.
+
+This is exactly how the original login-with-chatgpt works (it runs a server-side
+Codex process), and it's the same reason Clerk/Auth0/your-own-DB all need a
+backend. **The component gives you the hard 80%** — the popup flow, device-code
+UX, polling, sessions, and a security-hardened HTTP contract. **You bring a small
+backend endpoint** (one of the drop-in adapters below).
+
+**Deployment in one line:** frontend deploys anywhere (incl. Vercel); the backend
+runs on a *persistent* host (Railway, Render, Docker, a VPS) because the reference
+runner shells out to the `codex` CLI. See [`DEPLOYMENT.md`](./DEPLOYMENT.md) — it
+covers Railway (one-click), Docker, Next.js, and the Cloudflare-Worker proxy, and
+explains why Vercel *serverless functions* can't run the CLI backend.
+
+Backend adapters (all share one hardened core):
+
+| Import | For |
+|---|---|
+| `codex-auth/backend` | Express (`createCodexRouter`) — the generic reference |
+| `codex-auth/backend/next` | Next.js App Router route handler (Node runtime) |
+| `codex-auth/backend/worker` | Cloudflare Worker — proxy in front of a Node backend |
+
+---
+
 ## Quick start
 
 ### 1. Frontend — drop in the component

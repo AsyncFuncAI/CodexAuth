@@ -35,13 +35,29 @@
         "import": "./dist/backend.js",
         "require": "./dist/backend.cjs"
       }
+    },
+    "./backend/next": {
+      "node": {
+        "types": "./dist/backend-next.d.ts",
+        "import": "./dist/backend-next.js",
+        "require": "./dist/backend-next.cjs"
+      }
+    },
+    "./backend/worker": {
+      "types": "./dist/backend-worker.d.ts",
+      "import": "./dist/backend-worker.js",
+      "require": "./dist/backend-worker.cjs"
     }
   },
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "files": [
-    "dist"
+    "dist",
+    "deploy",
+    "DEPLOYMENT.md",
+    "CONTRACT.md",
+    "SECURITY.md"
   ],
   "scripts": {
     "build": "tsup",
