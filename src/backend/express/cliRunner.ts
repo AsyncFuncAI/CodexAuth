@@ -357,7 +357,7 @@ async function* parseExecJsonl(
  * items and non-fatal `error` items (e.g. the skills-budget warning), and emit
  * a `done` on `turn.completed`.
  */
-function mapCodexEvent(line: string): RunStreamEvent | null {
+export function mapCodexEvent(line: string): RunStreamEvent | null {
   let obj: any;
   try {
     obj = JSON.parse(line);
