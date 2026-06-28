@@ -1,5 +1,9 @@
 <div align="center">
 
+<!-- Banner: drop a docs/screenshots/banner.png and uncomment the line below.
+<img src="./docs/screenshots/banner.png" alt="CodexAuth" width="100%" />
+-->
+
 # `<CodexAuth />`
 
 ### Login with ChatGPT, as a React component.
@@ -40,7 +44,7 @@ npm install codex-auth
 browser only ever sees an `HttpOnly` cookie and the streamed output.
 
 <p align="center">
-  <img src="./docs/screenshots/console.png" alt="CodexAuth console running a prompt" width="900" />
+  <img src="./docs/screenshots/prompt.png" alt="CodexAuth console running a prompt on the user's ChatGPT account" width="900" />
 </p>
 
 ---
